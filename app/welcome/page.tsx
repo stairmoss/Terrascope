@@ -1,0 +1,9 @@
+import Link from "next/link";
+import { ArrowUpRight, MapPin } from "lucide-react";
+
+export default function WelcomePage() {
+  return <main className="relative grid min-h-screen overflow-hidden bg-[#e6e9f5] px-5 py-6 text-slate-900 sm:px-10">
+    <iframe title="World map" className="pointer-events-none absolute inset-0 h-full w-full opacity-45 grayscale" src="https://www.openstreetmap.org/export/embed.html?bbox=55%2C-8%2C115%2C42&layer=mapnik" />
+    <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col"><header className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center overflow-hidden rounded-lg bg-white shadow-sm"><img src="/brand/terrascope-logo.png" alt="TerraScope" className="h-full w-full scale-[1.45] object-cover" /></div><div><p className="text-lg font-bold">TerraScope</p><p className="text-xs font-medium text-slate-500">location intelligence</p></div></div><Link href="/" className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#1C1C1C] px-3 text-sm font-bold text-white">Open workspace <ArrowUpRight className="h-4 w-4" /></Link></header><section className="mt-auto max-w-2xl pb-10 pt-24 sm:pb-20"><div className="border border-white/80 bg-white/72 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:p-9"><p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Spatial decisions, grounded</p><h1 className="mt-4 text-4xl font-bold leading-tight sm:text-6xl">Know the land before you commit.</h1><p className="mt-5 max-w-xl text-base leading-7 text-slate-600">Inspect site context, environmental conditions, hazard signals, soil potential, and climate evidence at any coordinate.</p><Link href="/" className="mt-8 inline-flex h-11 items-center gap-2 rounded-lg bg-[#1C1C1C] px-4 text-sm font-bold text-white">Explore a location <MapPin className="h-4 w-4" /></Link></div></section></div>
+  </main>;
+}

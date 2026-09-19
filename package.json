@@ -1,0 +1,34 @@
+{
+  "name": "globe-spatial-intelligence",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "climate:predictor": "python3 services/climate_predictor/server.py"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
+    "@types/leaflet": "^1.9.20",
+    "leaflet": "^1.9.4",
+    "lucide-react": "0.468.0",
+    "next": "^16.3.5",
+    "openai": "4.76.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.1",
+    "@types/react-dom": "19.0.2",
+    "autoprefixer": "10.4.20",
+    "eslint": "9.16.0",
+    "eslint-config-next": "^16.3.5",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.16",
+    "typescript": "5.7.2"
+  }
+}
