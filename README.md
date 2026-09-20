@@ -52,13 +52,9 @@ Suggested walkthrough: open the map, select a coordinate, compare the three land
 
 ## Screenshots
 
-Add screenshots here as they are captured.
-
-```md
 ![Map workspace](docs/screenshots/workspace.png)
 ![Residential report](docs/screenshots/residential-report.png)
 ![Climate timeline](docs/screenshots/climate-timeline.png)
-```
 
 ## How to Run Locally
 
