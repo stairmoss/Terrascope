@@ -91,3 +91,69 @@ button, input { font: inherit; }
 .satellite-map .leaflet-tile {
   filter: saturate(0.72) brightness(1.04) contrast(0.92);
 }
+
+.terrascope-loader {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto;
+}
+
+.terrascope-loader--compact {
+  width: 54px;
+  height: 54px;
+}
+
+.terrascope-loader__ring {
+  position: absolute;
+  inset: 11px;
+  border: 1px solid rgba(28, 28, 28, 0.22);
+  border-radius: 999px;
+  animation: terrascope-pulse 2.2s ease-out infinite;
+}
+
+.terrascope-loader__ring--two { animation-delay: 1.1s; }
+
+.terrascope-loader__pin {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #1c1c1c;
+  animation: terrascope-pin 1.7s ease-in-out infinite;
+}
+
+.terrascope-loader__node {
+  position: absolute;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.13);
+  animation: terrascope-node 1.7s ease-in-out infinite;
+}
+
+.terrascope-loader__node--one { top: 13px; right: 10px; }
+.terrascope-loader__node--two { bottom: 14px; left: 9px; animation-delay: 0.55s; }
+
+@keyframes terrascope-pin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes terrascope-pulse {
+  0% { transform: scale(0.54); opacity: 0.85; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes terrascope-node {
+  0%, 100% { transform: scale(0.8); opacity: 0.55; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terrascope-loader__ring,
+  .terrascope-loader__pin,
+  .terrascope-loader__node { animation: none; }
+}

@@ -130,6 +130,7 @@ def build_prediction(lat: float, lng: float, years: int) -> dict[str, Any]:
         days.append(
             {
                 "year": float(str(timestamp)[:4]),
+                "month": float(str(timestamp)[5:7]),
                 "mean_temp": values[0],
                 "max_temp": values[1],
                 "min_temp": values[2],
@@ -157,6 +158,31 @@ def build_prediction(lat: float, lng: float, years: int) -> dict[str, Any]:
         }
         for year in ordered_years
     ]
+
+    # These are weather-trigger indicators, not a record of confirmed disasters.
+    # Restrict the interactive timeline to 2012 onward to keep the client response focused.
+    monthly_timeline = []
+    for year in [item for item in ordered_years if item >= 2012]:
+        for month in range(1, 13):
+            month_days = [day for day in by_year[year] if int(day["month"]) == month]
+            if not month_days:
+                continue
+            total_days = len(month_days)
+            flood_days = sum(day["rain"] >= 25 for day in month_days)
+            slope_days = sum(day["rain"] >= 50 for day in month_days)
+            heat_days = sum(day["max_temp"] >= 35 for day in month_days)
+            wind_days = sum(day["wind"] >= 60 for day in month_days)
+            monthly_timeline.append(
+                {
+                    "year": year,
+                    "month": month,
+                    "precipitation_mm": round(sum(day["rain"] for day in month_days), 1),
+                    "flood_drainage_trigger_pct": round(100 * flood_days / total_days),
+                    "slope_rainfall_trigger_pct": round(100 * slope_days / total_days),
+                    "heat_stress_trigger_pct": round(100 * heat_days / total_days),
+                    "high_wind_trigger_pct": round(100 * wind_days / total_days),
+                }
+            )
     rain_episode = []
     for year in ordered_years:
         values = by_year[year]
@@ -207,6 +233,8 @@ def build_prediction(lat: float, lng: float, years: int) -> dict[str, Any]:
             "annual_precipitation_trend_mm_per_year": rounded(linear_trend(annual_rain)),
         },
         "historical_yearly_climate": annual_history,
+        "monthly_weather_trigger_timeline": monthly_timeline,
+        "timeline_methodology": "Each monthly percentage is the share of observed days that crossed a weather threshold: 25 mm rain/day for flood or drainage pressure, 50 mm rain/day for slope-rainfall pressure, 35 C maximum temperature for heat stress, and 60 km/h maximum wind for high-wind exposure. These are screening indicators, not confirmed disaster counts or forecasts.",
         "current_weather_context": {
             "observed_at": current.get("time"),
             "temperature_c": current.get("temperature_2m"),

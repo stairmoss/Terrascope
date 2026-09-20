@@ -1,5 +1,5 @@
-import GlobeShell from "@/app/components/GlobeShell";
+import WelcomePage from "@/app/welcome/page";
 
 export default function Home() {
-  return <GlobeShell />;
+  return <WelcomePage />;
 }

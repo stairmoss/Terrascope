@@ -6,7 +6,7 @@ import type { Coordinates, IntelligenceSummary, LocationAudit } from "@/lib/type
 
 export const runtime = "nodejs";
 
-const AUDIT_SOURCE_VERSION = "openai-audit-10km-climate-v6";
+const AUDIT_SOURCE_VERSION = "openai-audit-10km-climate-v7";
 
 type CachedAuditRow = {
   id: string;
@@ -198,6 +198,39 @@ function climateSummary(weatherData: Record<string, unknown>) {
   return [`Now ${currentTemperature}, ${weatherCondition(current.weather_code)}`, apparentTemperature, dailyRange, rainfall].filter(Boolean).join(". ");
 }
 
+function calculateResidentialScreeningRisk(
+  airQualityData: Record<string, unknown>,
+  weatherData: Record<string, unknown>,
+  earthquakeData: Record<string, unknown>
+) {
+  const air = (airQualityData.current ?? {}) as Record<string, unknown>;
+  const weather = (weatherData.daily ?? {}) as Record<string, unknown>;
+  const pm25 = typeof air.pm2_5 === "number" ? air.pm2_5 : null;
+  const rain = Array.isArray(weather.precipitation_sum) && typeof weather.precipitation_sum[0] === "number" ? weather.precipitation_sum[0] : null;
+  const rainChance = Array.isArray(weather.precipitation_probability_max) && typeof weather.precipitation_probability_max[0] === "number" ? weather.precipitation_probability_max[0] : null;
+  const wind = Array.isArray(weather.wind_speed_10m_max) && typeof weather.wind_speed_10m_max[0] === "number" ? weather.wind_speed_10m_max[0] : null;
+  const earthquakes = Array.isArray(earthquakeData.features) ? earthquakeData.features as Array<Record<string, unknown>> : [];
+  const strongestEarthquake = Math.max(0, ...earthquakes.map((item) => Number((item.properties as Record<string, unknown> | undefined)?.mag) || 0));
+
+  let score = 1;
+  if (pm25 === null) score += 1;
+  else if (pm25 > 35) score += 3;
+  else if (pm25 > 15) score += 2;
+  else if (pm25 > 5) score += 1;
+
+  if (rain !== null && rain >= 50) score += 3;
+  else if (rain !== null && rain >= 20) score += 2;
+  else if (rain !== null && rain >= 5) score += 1;
+  else if (rainChance !== null && rainChance >= 80) score += 1;
+
+  if (wind !== null && wind >= 60) score += 2;
+  else if (wind !== null && wind >= 40) score += 1;
+
+  if (earthquakes.length > 0) score += 2;
+  if (strongestEarthquake >= 5) score += 1;
+  return Math.min(10, Math.max(1, score));
+}
+
 function getFallbackSummary(
   coordinates: Coordinates,
   airQualityData: Record<string, unknown>,
@@ -213,7 +246,7 @@ function getFallbackSummary(
   const address = (reverseGeocodeData.address ?? {}) as Record<string, unknown>;
   const pm25 = typeof current.pm2_5 === "number" ? current.pm2_5 : null;
   const no2 = typeof current.nitrogen_dioxide === "number" ? current.nitrogen_dioxide : null;
-  const riskScore = pm25 && pm25 > 35 ? 7 : pm25 && pm25 > 15 ? 5 : 3;
+  const riskScore = calculateResidentialScreeningRisk(airQualityData, weatherData, earthquakeData);
 
   return {
     location: {
@@ -294,7 +327,9 @@ function completeSummary(candidate: IntelligenceSummary, fallback: IntelligenceS
         earthquakes: text(candidate?.residential_view?.disaster_history?.earthquakes, fallback.residential_view.disaster_history.earthquakes),
         landslides: text(candidate?.residential_view?.disaster_history?.landslides, fallback.residential_view.disaster_history.landslides)
       },
-      risk_score: Math.min(10, Math.max(1, Math.round(number(candidate?.residential_view?.risk_score, fallback.residential_view.risk_score)))),
+      // Keep the score reproducible from the supplied coordinate-level sources.
+      // AI may interpret the evidence but must not silently invent a risk number.
+      risk_score: fallback.residential_view.risk_score,
       air_quality_summary: text(candidate?.residential_view?.air_quality_summary, fallback.residential_view.air_quality_summary),
       climate_summary: text(candidate?.residential_view?.climate_summary, fallback.residential_view.climate_summary),
       local_land_availability: text(candidate?.residential_view?.local_land_availability, fallback.residential_view.local_land_availability),

@@ -10,7 +10,6 @@ import {
   Factory,
   Gauge,
   Layers,
-  Loader2,
   MapPin,
   RotateCcw,
   Search,
@@ -160,13 +159,18 @@ export default function SpatialGlobeApp() {
       minZoom: 2,
       maxZoom: 20,
       zoomControl: false,
+      preferCanvas: true,
+      zoomAnimation: true,
+      fadeAnimation: true,
       worldCopyJump: true
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
     tileRef.current = L.tileLayer(LAYERS.map.url, {
       attribution: LAYERS.map.attribution,
-      maxZoom: 20
+      maxZoom: 20,
+      keepBuffer: 3,
+      updateWhenZooming: false
     }).addTo(map);
 
     map.on("click", (event: L.LeafletMouseEvent) => {
@@ -192,13 +196,18 @@ export default function SpatialGlobeApp() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    tileRef.current?.remove();
     const isNight = appearance === "night" || (appearance === "auto" && (new Date().getHours() >= 18 || new Date().getHours() < 6));
     const source = layer === "map" && isNight ? NIGHT_MAP : LAYERS[layer];
-    tileRef.current = L.tileLayer(source.url, {
+    const previousTiles = tileRef.current;
+    const nextTiles = L.tileLayer(source.url, {
       attribution: source.attribution,
-      maxZoom: 20
-    }).addTo(map);
+      maxZoom: 20,
+      keepBuffer: 3,
+      updateWhenZooming: false
+    });
+    nextTiles.once("load", () => previousTiles?.remove());
+    nextTiles.addTo(map);
+    tileRef.current = nextTiles;
     if (layer === "satellite") {
       labelRef.current = L.tileLayer(SATELLITE_LABELS.url, {
         attribution: SATELLITE_LABELS.attribution,
@@ -388,6 +397,7 @@ export default function SpatialGlobeApp() {
           </button>
         </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className={`hidden grid-cols-3 gap-2 border-b border-slate-200 bg-white/35 p-3 sm:grid ${audit ? "sm:hidden" : ""}`}>
           <Metric icon={<ZoomIn className="h-4 w-4" />} label="Zoom" value={String(zoom)} />
           <Metric icon={<Wind className="h-4 w-4" />} label="Air" value="Live" />
@@ -410,7 +420,7 @@ export default function SpatialGlobeApp() {
           </div>
         </div>
 
-        <div className="min-h-[250px] flex-1 overflow-y-auto overscroll-contain p-3 sm:min-h-[340px] sm:p-4">
+        <div className="p-3 sm:p-4">
           {!selected && !error && <EmptyPanel />}
           {error && !isLoading && <ErrorPanel message={error} />}
           {isLoading && <LoadingPanel />}
@@ -420,6 +430,7 @@ export default function SpatialGlobeApp() {
         </div>
 
         <div className="hidden border-t border-slate-200 bg-slate-50 px-4 py-3 text-center text-[11px] font-semibold text-slate-500 sm:block">10 km location intelligence</div>
+        </div>
       </aside>
 
     </main>
@@ -439,7 +450,7 @@ function ErrorPanel({ message }: { message: string }) {
 }
 
 function LoadingPanel() {
-  return <div className="grid min-h-[220px] place-items-center rounded-lg border border-slate-200 bg-slate-50 text-center"><div><Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" /><p className="mt-3 text-sm font-bold text-slate-800">Checking location</p><p className="mt-1 text-xs text-slate-500">Live data stays in this response.</p></div></div>;
+  return <div className="grid min-h-[220px] place-items-center rounded-lg border border-slate-200 bg-slate-50 text-center"><div><div className="terrascope-loader terrascope-loader--compact" aria-hidden="true"><span className="terrascope-loader__ring terrascope-loader__ring--one" /><span className="terrascope-loader__ring terrascope-loader__ring--two" /><span className="terrascope-loader__node terrascope-loader__node--one" /><span className="terrascope-loader__node terrascope-loader__node--two" /><span className="terrascope-loader__pin"><MapPin className="h-5 w-5" fill="currentColor" /></span></div><p className="mt-3 text-sm font-bold text-slate-800">Checking location</p><p className="mt-1 text-xs text-slate-500">Gathering map and environmental context.</p></div></div>;
 }
 
 function AuditPanel({ activeTab, audit, onTabChange }: { activeTab: TabKey; audit: LocationAudit | null; onTabChange: (tab: TabKey) => void }) {
@@ -517,7 +528,8 @@ function TabButton({ active, children, icon, onClick }: { active: boolean; child
 
 function ScorePanel({ score }: { score: number }) {
   const width = `${Math.min(Math.max(score, 1), 10) * 10}%`;
-  return <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="flex items-center justify-between"><p className="text-xs font-bold text-slate-500">Residential risk</p><p className="text-lg font-bold text-slate-950">{score}/10</p></div><div className="mt-3 h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-red-500" style={{ width }} /></div></div>;
+  const tone = score >= 7 ? "bg-red-500" : score >= 4 ? "bg-amber-500" : "bg-emerald-500";
+  return <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="flex items-center justify-between"><p className="text-xs font-bold text-slate-500">Current screening risk</p><p className="text-lg font-bold text-slate-950">{score}/10</p></div><div className="mt-3 h-2 rounded-full bg-slate-100"><div className={`h-2 rounded-full transition-[width] duration-500 ${tone}`} style={{ width }} /></div><p className="mt-2 text-[11px] leading-4 text-slate-500">Based on current air, forecast rain, wind, and nearby recorded earthquakes. It is not a disaster forecast.</p></div>;
 }
 
 function DecisionPanel({ decision, summary }: { decision: string; summary: string }) {
