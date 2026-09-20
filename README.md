@@ -46,7 +46,7 @@ Repository: [github.com/stairmoss/Terrascope](https://github.com/stairmoss/Terra
 
 ### Demo / Pitch Video
 
-Add the project demo or pitch-video link here.
+[Watch the TerraScope demo video](docs/screenshots/demo.webm)
 
 Suggested walkthrough: open the map, select a coordinate, compare the three land-use views, create a climate outlook, inspect the monthly timeline, and export the CSV.
 
